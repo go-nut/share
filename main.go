@@ -11,6 +11,7 @@ import (
   "log"
   "os"
   "io"
+  "time"
 )
 
 var (
@@ -42,6 +43,7 @@ func main() {
 //  logErr(err)
 //  _ip, _, err := net.ParseCIDR(a[len(a)-1].String())
 
+  // Grab an ipv4 address
   var _ip string
   interfaces, err := net.Interfaces()
   if err != nil {
@@ -58,7 +60,8 @@ func main() {
         errLog.Println(err)
         continue
       }
-      if len(IP) == 4 && !IP.IsLoopback() {
+      IP = IP.To4()
+      if IP != nil && len(IP) == 4 && !IP.IsLoopback() {
         _ip = IP.String()
         break
       }
@@ -87,10 +90,8 @@ func main() {
   }
 
   http.HandleFunc("/", handler)
-  err = http.Serve(l, nil)
-  if err != nil {
-    errLog.Fatalln(err)
-  }
+  http.Serve(l, nil)
+  time.Sleep(time.Second )
 }
 
 func logErr(err error) {
@@ -100,13 +101,13 @@ func logErr(err error) {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-  outLog.Println("starting handler")
   if requests >= count {
     return
   }
 
   if q := html.EscapeString(r.URL.Path); q != "/download.tar.gz" {
-    http.Redirect(w, r, "download.tar.gz", 302)
+    outLog.Println(q)
+    http.Redirect(w, r, "/download.tar.gz", 302)
     return
   }
 
@@ -122,7 +123,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
   if requests >= count {
     defer closeConn()
   }
-  outLog.Println("ending handler")
 }
 
 func iterDir(dirPath string, tw *tar.Writer) error {
@@ -159,7 +159,6 @@ func tarWrite(path string, tw *tar.Writer, fi os.FileInfo) error {
   }
   defer file.Close()
 
-  outLog.Println(path)
   h := new(tar.Header)
   h.Name = path
   h.Size = fi.Size()
