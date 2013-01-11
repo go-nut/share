@@ -7,7 +7,7 @@ import (
   "net"
   "net/http"
   "archive/tar"
-//  "compress/gzip"
+  "compress/gzip"
   "log"
   "os"
   "io"
@@ -38,15 +38,38 @@ func init() {
 
 func main() {
 
-  a, err := net.InterfaceAddrs()
-  logErr(err)
-  _ip, _, err := net.ParseCIDR(a[len(a)-1].String())
-  flag.StringVar(&ip, "ip", _ip.String(), "IP to serve from")
+//  a, err := net.InterfaceAddrs()
+//  logErr(err)
+//  _ip, _, err := net.ParseCIDR(a[len(a)-1].String())
+
+  var _ip string
+  interfaces, err := net.Interfaces()
+  if err != nil {
+    errLog.Println(err)
+  }
+  for _, interf := range interfaces {
+    addrs, err := interf.Addrs()
+    if err != nil {
+      errLog.Println(err)
+    }
+    for _, addr := range addrs {
+      IP, _, err := net.ParseCIDR(addr.String())
+      if err != nil {
+        errLog.Println(err)
+        continue
+      }
+      if len(IP) == 4 && !IP.IsLoopback() {
+        _ip = IP.String()
+        break
+      }
+    }
+  }
+  flag.StringVar(&ip, "ip", _ip, "IP to serve from")
 
   flag.Parse()
 
   host := ip + ":" + port
-  outLog.Println("Serving on http://" + host)
+  outLog.Println("Serving on http://" + host + "/download.tar.gz")
 
   fileList = flag.Args()
   if len(fileList) == 0 {
@@ -68,7 +91,6 @@ func main() {
   if err != nil {
     errLog.Fatalln(err)
   }
-  outLog.Println("closing program")
 }
 
 func logErr(err error) {
@@ -82,13 +104,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
   if requests >= count {
     return
   }
-  for a, b := range r.Header {
-    outLog.Print("name: " +a)
-    outLog.Println(b)
-  }
+
   if q := html.EscapeString(r.URL.Path); q != "/download.tar.gz" {
     http.Redirect(w, r, "download.tar.gz", 302)
-    outLog.Print("Redirecting: " + q)
     return
   }
 
@@ -98,7 +116,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
   if err := writeArchive(fileList, writer); err != nil {
     errLog.Fatalln(err)
   }
-  w.Flush()
   outLog.Println("Served to " + r.Host + " complete")
 
   requests++
@@ -161,10 +178,10 @@ func tarWrite(path string, tw *tar.Writer, fi os.FileInfo) error {
 }
 
 func writeArchive(paths []string, w io.Writer) error {
-//  gz := gzip.NewWriter(w)
-//  defer gz.Close()
+  gz := gzip.NewWriter(w)
+  defer gz.Close()
 
-  tw := tar.NewWriter(w)
+  tw := tar.NewWriter(gz)
   defer tw.Close()
 
   for _, path := range paths {
@@ -195,5 +212,4 @@ func closeConn() {
   if err := l.Close(); err != nil {
     errLog.Fatalln(err)
   }
-  outLog.Println("closing connection")
 }
