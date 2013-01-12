@@ -77,6 +77,7 @@ func dlHandler(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Content-Type", "application/octet-stream")
   writer := w.(io.Writer)
   shareLog.Print("Serving to: " + r.Host)
+  w.(http.Flusher).Flush()
   if err := writeArchive(files, writer); err != nil {
     shareLog.Print("Error serving to: " + r.Host + " - " + err.Error())
   }
