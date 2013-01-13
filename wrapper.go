@@ -19,7 +19,7 @@ func (l *lwrap) Accept() (wrapper net.Conn, err error) {
 			conn:     nconn,
 			connChan: l.connChan,
 		}
-	  l.connChan <- true
+		l.connChan <- true
 	}
 	return
 }

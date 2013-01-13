@@ -3,7 +3,7 @@ build:
 	go build *.go
 
 install:
-	go install - 3 .
+	go install -p 3 .
 
 gofmt:
 	gofmt -w *.go
