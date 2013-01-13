@@ -19,13 +19,13 @@ func (l *lwrap) Accept() (wrapper net.Conn, err error) {
 			conn:     nconn,
 			connChan: l.connChan,
 		}
-		defer func() { l.connChan <- true }()
+	  l.connChan <- true
 	}
 	return
 }
 
 func (l *lwrap) Close() error {
-	defer func() { l.wait <- true }()
+	l.wait <- true
 	return l.li.Close()
 }
 
@@ -50,7 +50,7 @@ type wconn struct {
 }
 
 func (c *wconn) Close() error {
-	defer func() { c.connChan <- false }()
+	c.connChan <- false
 	return c.conn.Close()
 }
 
