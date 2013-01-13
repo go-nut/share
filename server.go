@@ -10,8 +10,10 @@ import (
 type StopServer struct {
 	http.Server
 	listener net.Listener
-	waiter sync.WaitGroup
+	connChan chan bool
 }
+
+
 
 
 func (srv *StopServer) ListenAndServe() error {
@@ -19,7 +21,12 @@ func (srv *StopServer) ListenAndServe() error {
     srv.Addr = ":http"
   }
   var err error
-  srv.listener, err = net.Listen("tcp", srv.Addr)
+  // Wrap the listener so we can know when to close
+  l, err := net.Listen("tcp", srv.Addr)
+  lw := &lwrap {
+    li: l,
+  }
+  srv.listener = lw
 
   if err != nil {
     return err

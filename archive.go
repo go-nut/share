@@ -31,7 +31,7 @@ func writeArchive(paths []string, w io.Writer) error {
         return err
       }
     } else {
-      if err := tarWrite(path, tw, stat); err != nil {
+      if err := tarWrite(path, tw); err != nil {
         return err
       }
     }
@@ -59,7 +59,7 @@ func iterDir(dirPath string, tw *tar.Writer) error {
         return err
       }
     } else {
-      if err := tarWrite(curPath, tw, fi); err != nil {
+      if err := tarWrite(curPath, tw); err != nil {
         return err
       }
     }
@@ -68,12 +68,17 @@ func iterDir(dirPath string, tw *tar.Writer) error {
 }
 
 // Add file to archive stream
-func tarWrite(path string, tw *tar.Writer, fi os.FileInfo) error {
+func tarWrite(path string, tw *tar.Writer) error {
   file, err := os.Open(path)
   if err != nil {
     return err
   }
   defer file.Close()
+
+  fi, err := file.Stat()
+  if err != nil {
+    return err
+  }
 
   h := new(tar.Header)
   h.Name = path
@@ -81,15 +86,18 @@ func tarWrite(path string, tw *tar.Writer, fi os.FileInfo) error {
   h.Mode = int64(fi.Mode())
   h.ModTime = fi.ModTime()
 
-  err = tw.WriteHeader(h)
-  if err != nil {
-    return err
+  if err := tw.WriteHeader(h); err != nil { 
+    return nil
   }
-  _, err = io.Copy(tw, file)
+  a, err := io.Copy(tw, file)
+
+  if fi.Size() != a {
+    shareLog.Printf("%s did not complete", fi.Name())
+  }
   if err != nil {
+    shareLog.Print("Error here: ", err.Error())
     return err
   }
   return nil
 }
-
 

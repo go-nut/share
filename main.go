@@ -41,6 +41,13 @@ func main() {
     files = append(files, ".")
   }
 
+  // Test writing files
+  //a_file, err := os.Create("./test/download.tar.gz")
+  //if err != nil {
+  //  shareLog.Fatalf("Error creating file: %s", err)
+  //}
+  //writeArchive(files, a_file)
+
   host := ip + ":" + port
 
   httpServer = &StopServer {
@@ -64,6 +71,7 @@ func main() {
 
   shareLog.Print("Serving at: http://" + host + "/download.tar.gz")
   err = httpServer.ListenAndServe()
+  shareLog.Print(err.Error())
 
   httpServer.WaitUnfinished()
 }
@@ -74,12 +82,15 @@ func dlHandler(w http.ResponseWriter, r *http.Request) {
   if requests >= count {
     httpServer.Stop()
   }
+  shareLog.Printf("Serving to: %s", r.Host)
   w.Header().Set("Content-Type", "application/octet-stream")
-  writer := w.(io.Writer)
-  shareLog.Print("Serving to: " + r.Host)
-  w.(http.Flusher).Flush()
-  if err := writeArchive(files, writer); err != nil {
+  w.Header().Set("Connection", "close")
+  w.WriteHeader(http.StatusOK)
+  shareLog.Printf("Content-Length: %s", w.Header().Get("Content-Length"))
+
+  if err := writeArchive(files, w.(io.Writer)); err != nil {
     shareLog.Print("Error serving to: " + r.Host + " - " + err.Error())
   }
-  shareLog.Print("Finished serving to: " + r.Host)
+  w.(http.Flusher).Flush()
+  shareLog.Printf("Finished serving to:  %s", r.Host)
 }
