@@ -1,6 +1,6 @@
 
 build:
-	go build *.go
+	go build .
 
 install:
 	go install -p 3 .
