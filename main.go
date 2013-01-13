@@ -67,9 +67,8 @@ func main() {
   }
   shareLog.Print("Serving at: http://" + host + "/download.tar.gz")
 
-  err = http.Serve(wrapper, nil)
+  http.Serve(wrapper, nil)
   <-wait
-  shareLog.Print(err.Error())
 }
 
 // Handle the download
@@ -109,5 +108,4 @@ func connectionCounter(wait, connChan chan bool) {
     }
   }
   wait <- true
-  shareLog.Print("exiting goroutine")
 }
