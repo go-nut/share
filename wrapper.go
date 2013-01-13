@@ -99,7 +99,7 @@ func getAddr() (string, error) {
 				return "", err
 			}
 			IP = IP.To4()
-			if IP != nil && len(IP) == 4 && !IP.IsLoopback() {
+			if IP != nil && !IP.IsLoopback() {
 				return IP.String(), nil
 			}
 		}
