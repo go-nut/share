@@ -87,7 +87,7 @@ func tarWrite(path string, tw *tar.Writer) error {
   h.ModTime = fi.ModTime()
 
   if err := tw.WriteHeader(h); err != nil { 
-    return nil
+    return err
   }
   a, err := io.Copy(tw, file)
 
@@ -95,8 +95,12 @@ func tarWrite(path string, tw *tar.Writer) error {
     shareLog.Printf("%s did not complete", fi.Name())
   }
   if err != nil {
-    shareLog.Print("Error here: ", err.Error())
-    return err
+    if err == io.ErrShortWrite {
+      shareLog.Printf("%s wrote %d out of %d - %s", fi.Name(), a,
+        fi.Size(), err.Error())
+    } else {
+      return err
+    }
   }
   return nil
 }
